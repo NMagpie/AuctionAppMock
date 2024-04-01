@@ -1,9 +1,7 @@
-﻿namespace AuctionApp.Domain.Enumerators
+﻿namespace AuctionApp.Domain.Enumerators;
+public enum AuctionStatus
 {
-    public enum AuctionStatus
-    {
-        Created,
-        Active,
-        Finished
-    }
+    Created,
+    Active,
+    Finished
 }

@@ -26,7 +26,7 @@ List<CreateLot> lotsRequests = [
 
 var lotIds = lotsRequests.Select(async request => await mediator.Send(request)).Select(task => task.Result.Id).ToList();
 
-var auction = await mediator.Send(new CreateAuction("Famous Worldwide paintings",DateTime.UtcNow, TimeSpan.FromMinutes(30), lotIds));
+var auction = await mediator.Send(new CreateAuction("Famous Worldwide paintings", DateTime.UtcNow, TimeSpan.FromMinutes(30), lotIds));
 
 await mediator.Send(new CreateBid(auction.Id, lotIds[2], 5_000_000m));
 

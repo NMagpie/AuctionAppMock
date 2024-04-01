@@ -1,15 +1,13 @@
 ﻿using AuctionApp.Domain.Models;
 
-namespace AuctionApp.Application.Abstractions
+namespace AuctionApp.Application.Abstractions;
+public interface IAuctionRepository
 {
-    public interface IAuctionRepository
-    {
-        Auction Create(Auction auction);
+    Auction Create(Auction auction);
 
-        Auction? GetById(int id);
+    Auction? GetById(int id);
 
-        ICollection<Auction> GetAll();
+    ICollection<Auction> GetAll();
 
-        int GetLastId();
-    }
+    int GetLastId();
 }

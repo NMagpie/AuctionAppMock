@@ -4,48 +4,46 @@ using AuctionApp.Domain.Enumerators;
 using AuctionApp.Domain.Models;
 using MediatR;
 
-namespace AuctionApp.Application.Auctions.Create
+namespace AuctionApp.Application.Auctions.Create;
+public record CreateAuction(string Title, DateTime TimeStart, TimeSpan Duration, List<int> LotIds) : IRequest<AuctionDto>;
+
+public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
 {
-    public record CreateAuction(string Title, DateTime TimeStart, TimeSpan Duration, List<int> LotIds) : IRequest<AuctionDto>;
+    private readonly IAuctionRepository _auctionRepository;
 
-    public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
+    private readonly ILotRepository _lotRepository;
+
+    public CreateAuctionHandler(IAuctionRepository auctionRepository, ILotRepository lotRepository)
     {
-        private readonly IAuctionRepository _auctionRepository;
+        _auctionRepository = auctionRepository;
+        _lotRepository = lotRepository;
+    }
 
-        private readonly ILotRepository _lotRepository;
-
-        public CreateAuctionHandler(IAuctionRepository auctionRepository, ILotRepository lotRepository)
+    public Task<AuctionDto> Handle(CreateAuction request,
+        CancellationToken cancellationToken)
+    {
+        var lots = _lotRepository.GetLotsByIds(request.LotIds);
+        if (lots.Count != request.LotIds.Count)
         {
-            _auctionRepository = auctionRepository;
-            _lotRepository = lotRepository;
+            throw new ApplicationException("One or more lots not found");
         }
 
-        public Task<AuctionDto> Handle(CreateAuction request, 
-            CancellationToken cancellationToken)
+        var auction = new Auction()
         {
-            var lots = _lotRepository.GetLotsByIds(request.LotIds);
-            if (lots.Count != request.LotIds.Count)
-            {
-                throw new ApplicationException("One or more lots not found");
-            }
+            Id = GetNextId(),
+            Title = request.Title,
+            TimeStart = request.TimeStart,
+            Duration = request.Duration,
+            Status = AuctionStatus.Created,
+            Lots = lots
+        };
 
-            var auction = new Auction()
-            {
-                Id = GetNextId(),
-                Title = request.Title,
-                TimeStart = request.TimeStart, 
-                Duration = request.Duration, 
-                Status = AuctionStatus.Created,
-                Lots = lots 
-            };
+        var createdAuction = _auctionRepository.Create(auction);
+        return Task.FromResult(AuctionDto.FromAuction(createdAuction));
+    }
 
-            var createdAuction = _auctionRepository.Create(auction);
-            return Task.FromResult(AuctionDto.FromAuction(createdAuction));
-        }
-
-        private int GetNextId()
-        {
-            return _auctionRepository.GetLastId();
-        }
+    private int GetNextId()
+    {
+        return _auctionRepository.GetLastId();
     }
 }

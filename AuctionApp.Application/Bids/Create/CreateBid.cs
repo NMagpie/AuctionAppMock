@@ -13,8 +13,8 @@ public class CreateBidHandler : IRequestHandler<CreateBid, BidDto>
     private readonly IAuctionRepository _auctionRepository;
 
     public CreateBidHandler(
-        IBidRepository bidRepository, 
-        ILotRepository lotRepository, 
+        IBidRepository bidRepository,
+        ILotRepository lotRepository,
         IAuctionRepository auctionRepository)
     {
         _bidRepository = bidRepository;

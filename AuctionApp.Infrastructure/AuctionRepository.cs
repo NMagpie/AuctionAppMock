@@ -1,33 +1,31 @@
 ﻿using AuctionApp.Application.Abstractions;
 using AuctionApp.Domain.Models;
 
-namespace AuctionApp.Infrastructure
+namespace AuctionApp.Infrastructure;
+public class AuctionRepository : IAuctionRepository
 {
-    public class AuctionRepository : IAuctionRepository
+    private readonly List<Auction> _auctions = [];
+
+    public Auction Create(Auction auction)
     {
-        private readonly List<Auction> _auctions = [];
+        _auctions.Add(auction);
+        return auction;
+    }
 
-        public Auction Create(Auction auction)
-        {
-            _auctions.Add(auction);
-            return auction;
-        }
+    public ICollection<Auction> GetAll()
+    {
+        return _auctions;
+    }
 
-        public ICollection<Auction> GetAll()
-        {
-            return _auctions;
-        }
+    public Auction? GetById(int id)
+    {
+        return _auctions.FirstOrDefault(a => a.Id == id);
+    }
 
-        public Auction? GetById(int id)
-        {
-            return _auctions.FirstOrDefault(a => a.Id == id);
-        }
-
-        public int GetLastId()
-        {
-            if (_auctions.Count == 0) return 1;
-            var lastId = _auctions.Max(b => b.Id);
-            return lastId + 1;
-        }
+    public int GetLastId()
+    {
+        if (_auctions.Count == 0) return 1;
+        var lastId = _auctions.Max(b => b.Id);
+        return lastId + 1;
     }
 }
