@@ -31,8 +31,13 @@ namespace AuctionApp.Application.Auctions.Responses
                 Duration = auction.Duration,
                 Status = auction.Status,
                 Lots = auction.Lots.Select(LotDto.FromLot).ToList(),
-                Bids = auction.Bids.Select(BidDto.FromBid).ToList()
+                Bids = auction.Bids.Select(bid => BidDto.FromBid(bid) ).ToList()
             };
+        }
+
+        public override string ToString()
+        {
+            return $"Id: {Id}\nTitle: {Title}\nStart time: {TimeStart}\nDuration: {Duration.TotalMinutes} min\nStatus: {Status}\nLots:\n {string.Join("", Lots)}\n";
         }
     }
 }

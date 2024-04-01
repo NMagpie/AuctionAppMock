@@ -12,6 +12,8 @@ public class LotDto
 
     public decimal InitialPrice { get; set; }
 
+    public decimal Price { get; set; }
+
     public List<BidDto> Bids { get; set; }
 
     public static LotDto FromLot(Lot lot)
@@ -22,7 +24,13 @@ public class LotDto
             Title = lot.Title,
             Description = lot.Description,
             InitialPrice = lot.InitialPrice,
-            Bids = lot.Bids.Select(BidDto.FromBid).ToList()
+            Price = lot.Price,
+            Bids = lot.Bids.Select(bid => BidDto.FromBid(bid)).ToList()
         };
+    }
+
+    public override string ToString()
+    {
+        return $"Title: {Title}, Description: {Description}, Initial Price: {InitialPrice.ToString("C")}\nCurrent Price: {Price.ToString("C")} \nBids:\n{string.Join("", Bids)}\n";
     }
 }

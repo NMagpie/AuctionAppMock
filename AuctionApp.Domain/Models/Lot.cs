@@ -16,6 +16,7 @@
         public string Description { get; set; }
 
         public decimal InitialPrice { get; set; }
+        public decimal Price { get; set; }
 
         public ICollection<Bid> Bids { get; set; }
     }

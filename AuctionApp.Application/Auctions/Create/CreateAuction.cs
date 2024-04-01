@@ -1,11 +1,12 @@
 ﻿using AuctionApp.Application.Abstractions;
 using AuctionApp.Application.Auctions.Responses;
+using AuctionApp.Domain.Enumerators;
 using AuctionApp.Domain.Models;
 using MediatR;
 
 namespace AuctionApp.Application.Auctions.Create
 {
-    public record CreateAuction(DateTime TimeStart, TimeSpan Duration, List<int> LotIds) : IRequest<AuctionDto>;
+    public record CreateAuction(string Title, DateTime TimeStart, TimeSpan Duration, List<int> LotIds) : IRequest<AuctionDto>;
 
     public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
     {
@@ -31,8 +32,10 @@ namespace AuctionApp.Application.Auctions.Create
             var auction = new Auction()
             {
                 Id = GetNextId(),
+                Title = request.Title,
                 TimeStart = request.TimeStart, 
                 Duration = request.Duration, 
+                Status = AuctionStatus.Created,
                 Lots = lots 
             };
 

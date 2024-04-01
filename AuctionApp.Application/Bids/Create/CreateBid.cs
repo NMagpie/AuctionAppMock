@@ -36,6 +36,13 @@ public class CreateBidHandler : IRequestHandler<CreateBid, BidDto>
             throw new ApplicationException("Lot not found");
         }
 
+        if (lot.Price >= request.Price)
+        {
+            throw new ApplicationException("Price cannot be lower than latest price");
+        }
+
+        lot.Price = request.Price;
+
         var bid = new Bid()
         {
             Id = GetNextId(),
@@ -43,8 +50,9 @@ public class CreateBidHandler : IRequestHandler<CreateBid, BidDto>
             Lot = lot,
             Price = request.Price,
             Time = DateTime.UtcNow,
-
         };
+
+        _lotRepository.AddBidById(lot.Id, bid);
 
         var createdBid = _bidRepository.Create(bid);
         return Task.FromResult(BidDto.FromBid(createdBid));

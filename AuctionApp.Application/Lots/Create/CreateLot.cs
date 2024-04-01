@@ -23,6 +23,7 @@ public class CreateLotHandler : IRequestHandler<CreateLot, LotDto>
             Title = request.Title,
             Description = request.Description,
             InitialPrice = request.InitialPrice,
+            Price = request.InitialPrice
         };
 
         var createdLot = _lotRepository.Create(lot);

@@ -10,6 +10,8 @@ namespace AuctionApp.Application.Abstractions
 
         List<Lot> GetLotsByIds(List<int> lotIds);
 
+        Lot? AddBidById(int id, Bid bid);
+
         int GetLastId();
     }
 }

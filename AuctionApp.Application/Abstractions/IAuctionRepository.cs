@@ -8,6 +8,8 @@ namespace AuctionApp.Application.Abstractions
 
         Auction? GetById(int id);
 
+        ICollection<Auction> GetAll();
+
         int GetLastId();
     }
 }
