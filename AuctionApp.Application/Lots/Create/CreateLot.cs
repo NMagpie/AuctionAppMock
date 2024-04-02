@@ -17,6 +17,21 @@ public class CreateLotHandler : IRequestHandler<CreateLot, LotDto>
 
     public Task<LotDto> Handle(CreateLot request, CancellationToken cancellationToken)
     {
+        if (request.Title is null || request.Title?.Length == 0)
+        {
+            throw new ApplicationException("Title Required");
+        }
+
+        if (request.Description is null || request.Description?.Length == 0)
+        {
+            throw new ApplicationException("Description Required");
+        }
+
+        if (request.InitialPrice <= 0)
+        {
+            throw new ApplicationException("Price must be positive");
+        }
+
         var lot = new Lot()
         {
             Id = GetNextId(),
