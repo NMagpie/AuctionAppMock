@@ -29,7 +29,7 @@ public class AuctionDto
             TimeStart = auction.TimeStart,
             Duration = auction.Duration,
             Status = auction.Status,
-            Lots = auction.Lots.Select(LotDto.FromLot).ToList(),
+            Lots = auction.Lots.Select(lot => LotDto.FromLot(lot)).ToList(),
             Bids = auction.Bids.Select(bid => BidDto.FromBid(bid)).ToList()
         };
     }

@@ -5,27 +5,35 @@ using AuctionApp.Domain.Models;
 using MediatR;
 
 namespace AuctionApp.Application.Auctions.Create;
-public record CreateAuction(string Title, DateTime TimeStart, TimeSpan Duration, List<int> LotIds) : IRequest<AuctionDto>;
+public record CreateAuction(string Title, DateTime TimeStart, TimeSpan Duration) : IRequest<AuctionDto>;
 
 public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
 {
     private readonly IAuctionRepository _auctionRepository;
 
-    private readonly ILotRepository _lotRepository;
-
     public CreateAuctionHandler(IAuctionRepository auctionRepository, ILotRepository lotRepository)
     {
         _auctionRepository = auctionRepository;
-        _lotRepository = lotRepository;
     }
 
     public Task<AuctionDto> Handle(CreateAuction request,
         CancellationToken cancellationToken)
     {
-        var lots = _lotRepository.GetLotsByIds(request.LotIds);
-        if (lots.Count != request.LotIds.Count)
+        if (request.Title is null || request.Title?.Length == 0)
         {
-            throw new ApplicationException("One or more lots not found");
+            throw new ApplicationException("Title Required");
+        }
+
+        if (request.TimeStart <= DateTime.UtcNow)
+        {
+            throw new ApplicationException("Cannot set already passed date");
+        }
+
+        if (request.Duration < TimeSpan.FromMinutes(1) ||
+            request.Duration > TimeSpan.FromHours(5)
+            )
+        {
+            throw new ApplicationException("Auction cannot durate less than 1 minute and more than 5 hours");
         }
 
         var auction = new Auction()
@@ -35,7 +43,8 @@ public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
             TimeStart = request.TimeStart,
             Duration = request.Duration,
             Status = AuctionStatus.Created,
-            Lots = lots
+            Lots = [],
+            Bids = [],
         };
 
         var createdAuction = _auctionRepository.Create(auction);

@@ -2,6 +2,7 @@
 using AuctionApp.Application.Auctions.Create;
 using AuctionApp.Application.Auctions.Queries;
 using AuctionApp.Application.Lots.Create;
+using AuctionApp.Application.Lots.Responses;
 using AuctionApp.Infrastructure;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,22 +16,22 @@ var diContainer = new ServiceCollection()
 
 var mediator = diContainer.GetRequiredService<IMediator>();
 
+var auction = await mediator.Send(new CreateAuction("Famous Worldwide paintings", DateTime.UtcNow, TimeSpan.FromMinutes(30)));
+
 List<CreateLot> lotsRequests = [
-    new CreateLot("Guernica", "by P. Picasso", 200_000_000m),
-    new CreateLot("Starry night", "by V. van Gogh", 70_000_000m),
-    new CreateLot("Barge Haulers on the Volga", "by I. Repin", 2_000_000m),
-    new CreateLot("The Great Wave off Kanagawa", "by K. Hokusai", 2_760_000m),
-    new CreateLot("The Kiss", "by G. Klimt", 240_000m),
-    new CreateLot("Girl with a Pearl Earring", "by J. Vermeer", 30_000_000m)
+    new CreateLot("Guernica", "by P. Picasso", auction.Id, 200_000_000m),
+    new CreateLot("Starry night", "by V. van Gogh", auction.Id, 70_000_000m),
+    new CreateLot("Barge Haulers on the Volga", "by I. Repin", auction.Id, 2_000_000m),
+    new CreateLot("The Great Wave off Kanagawa", "by K. Hokusai", auction.Id, 2_760_000m),
+    new CreateLot("The Kiss", "by G. Klimt", auction.Id, 240_000m),
+    new CreateLot("Girl with a Pearl Earring", "by J. Vermeer", auction.Id, 30_000_000m)
 ];
 
-var lotIds = lotsRequests.Select(async request => await mediator.Send(request)).Select(task => task.Result.Id).ToList();
+List<LotDto> lots = lotsRequests.Select(async (request) => await mediator.Send(request) ).Select(request => request.Result).ToList();
 
-var auction = await mediator.Send(new CreateAuction("Famous Worldwide paintings", DateTime.UtcNow, TimeSpan.FromMinutes(30), lotIds));
+await mediator.Send(new CreateBid(auction.Id, lots[2].Id, 5_000_000m));
 
-await mediator.Send(new CreateBid(auction.Id, lotIds[2], 5_000_000m));
-
-await mediator.Send(new CreateBid(auction.Id, lotIds[2], 6_000_000m));
+await mediator.Send(new CreateBid(auction.Id, lots[2].Id, 6_000_000m));
 
 auction = await mediator.Send(new GetAuctionById(1));
 

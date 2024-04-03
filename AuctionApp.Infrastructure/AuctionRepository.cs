@@ -6,6 +6,15 @@ public class AuctionRepository : IAuctionRepository
 {
     private readonly List<Auction> _auctions = [];
 
+    public Auction? AddLotById(int id, Lot lot)
+    {
+        var auction = _auctions.FirstOrDefault(a => a.Id == id);
+
+        auction?.Lots.Add(lot);
+
+        return auction;
+    }
+
     public Auction Create(Auction auction)
     {
         _auctions.Add(auction);

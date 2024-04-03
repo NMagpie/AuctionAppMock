@@ -7,6 +7,8 @@ public interface IAuctionRepository
 
     Auction? GetById(int id);
 
+    Auction? AddLotById(int id, Lot lot);
+
     ICollection<Auction> GetAll();
 
     int GetLastId();
