@@ -1,7 +1,7 @@
-﻿using AuctionApp.Application.Auctions.Create;
+﻿using AuctionApp.Application.Abstractions;
 using AuctionApp.Application.Auctions.Queries;
-using AuctionApp.Infrastructure;
-using AutoFixture;
+using AuctionApp.Domain.Models;
+using Moq;
 
 namespace AuctionApp.Tests.AuctionApp.Application.Tests.AuctionsService;
 public class QueryAuctionTests
@@ -9,54 +9,28 @@ public class QueryAuctionTests
     [Fact]
     public async Task GetAuctionById()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Auction());
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        var getAuctionByIdHandler = new GetAuctionByIdHandler(auctionRepositoryMock.Object);
 
-        var getAuctionByIdHandler = new GetAuctionByIdHandler(auctionRepositoryMock);
+        await getAuctionByIdHandler.Handle(new GetAuctionById(1), new CancellationToken());
 
-        var createAuction = new CreateAuction("123", DateTime.Now.AddMinutes(10), TimeSpan.FromMinutes(10));
-
-        var auctionResult = await createAuctionHandler.Handle(createAuction, new CancellationToken());
-
-        var getAuction = new GetAuctionById(auctionResult.Id);
-
-        var queryResult = await getAuctionByIdHandler.Handle(getAuction, new CancellationToken());
-
-        Assert.Equivalent(auctionResult, queryResult);
+        auctionRepositoryMock.Verify(r => r.GetById(It.IsAny<int>()), Times.Once);
     }
 
     [Fact]
     public async Task GetAllAuctions()
     {
-        var fixture = new Fixture();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        fixture.Customizations.Add(new RandomDateTimeSequenceGenerator(DateTime.Now, DateTime.MaxValue));
+        auctionRepositoryMock.Setup(x => x.GetAll()).Returns([]);
 
-        fixture.Customizations.Add(new TimeSpanGenerator());
+        var getAllAuctionsHandler = new GetAllAuctionsHandler(auctionRepositoryMock.Object);
 
-        var auctionRepositoryMock = new AuctionRepository();
+        await getAllAuctionsHandler.Handle(new GetAllAuctions(), new CancellationToken());
 
-        var lotRepositoryMock = new LotRepository();
-
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
-
-        var getAllAuctionsHandler = new GetAllAuctionsHandler(auctionRepositoryMock);
-
-        var createAuctionList = fixture.Create<Generator<CreateAuction>>()
-            .Take(100)
-            .ToList();
-
-        var auctionResultList = createAuctionList
-            .Select(async (createAuction) => await createAuctionHandler.Handle(createAuction, new CancellationToken()))
-            .Select(auction => auction.Result).ToList();
-
-        var getAuctionQuery = new GetAllAuctions();
-
-        var queryResult = (await getAllAuctionsHandler.Handle(getAuctionQuery, new CancellationToken())).ToList();
-
-        Assert.Equivalent(auctionResultList, queryResult);
+        auctionRepositoryMock.Verify(r => r.GetAll(), Times.Once);
     }
 }

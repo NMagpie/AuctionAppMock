@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AuctionApp.Application\AuctionApp.Application.csproj" />
+    <ProjectReference Include="..\AuctionApp.Domain\AuctionApp.Domain.csproj" />
     <ProjectReference Include="..\AuctionApp.Infrastructure\AuctionApp.Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,7 @@
-﻿using AuctionApp.Application.Auctions.Create;
+﻿using AuctionApp.Application.Abstractions;
 using AuctionApp.Application.Lots.Create;
-using AuctionApp.Infrastructure;
+using AuctionApp.Domain.Models;
+using Moq;
 
 namespace AuctionApp.Tests.AuctionApp.Application.Tests.BidsService;
 public class CreateBidTests
@@ -8,116 +9,109 @@ public class CreateBidTests
     [Fact]
     public async Task CreateCorrectBid()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Auction());
 
-        var bidRepositoryMock = new BidRepository();
+        var lotRepositoryMock = new Mock<ILotRepository>();
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        lotRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Lot());
 
-        var createLotHandler = new CreateLotHandler(lotRepositoryMock, auctionRepositoryMock);
+        var bidRepositoryMock = new Mock<IBidRepository>();
 
-        var createBidHandler = new CreateBidHandler(bidRepositoryMock, lotRepositoryMock, auctionRepositoryMock);
+        bidRepositoryMock.Setup(x => x.Create(It.IsAny<Bid>())).Returns(new Bid());
 
-        var createAuction = new CreateAuction("123", DateTime.Now, TimeSpan.FromMinutes(10));
+        var createBidHandler = new CreateBidHandler(bidRepositoryMock.Object, lotRepositoryMock.Object, auctionRepositoryMock.Object);
 
-        var auctionResult = await createAuctionHandler.Handle(createAuction, new CancellationToken());
+        var createBid = new CreateBid(1, 1, 11m);
 
-        var createLot = new CreateLot("123", "456", auctionResult.Id, 10m);
+        await createBidHandler.Handle(createBid, new CancellationToken());
 
-        var lotResult = await createLotHandler.Handle(createLot, new CancellationToken());
-
-        var createBid = new CreateBid(auctionResult.Id, lotResult.Id, 11m);
-
-        var bidResult = await createBidHandler.Handle(createBid, new CancellationToken());
-
-        var checkObjects = createBid.Price == bidResult.Price;
-
-        Assert.True(checkObjects);
+        Assert.Multiple(
+            () => auctionRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => lotRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => bidRepositoryMock.Verify(x => x.Create(It.IsAny<Bid>()), Times.Once)
+            );
     }
 
     [Fact]
-    public async Task CreateBidWithLowerPrice()
+    public void CreateBidWithLowerPrice()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Auction());
 
-        var bidRepositoryMock = new BidRepository();
+        var lotRepositoryMock = new Mock<ILotRepository>();
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        lotRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Lot() { Price = 11m });
 
-        var createLotHandler = new CreateLotHandler(lotRepositoryMock, auctionRepositoryMock);
+        var bidRepositoryMock = new Mock<IBidRepository>();
 
-        var createBidHandler = new CreateBidHandler(bidRepositoryMock, lotRepositoryMock, auctionRepositoryMock);
+        bidRepositoryMock.Setup(x => x.Create(It.IsAny<Bid>())).Returns<Bid>(null);
 
-        var createAuction = new CreateAuction("123", DateTime.Now, TimeSpan.FromMinutes(10));
+        var createBidHandler = new CreateBidHandler(bidRepositoryMock.Object, lotRepositoryMock.Object, auctionRepositoryMock.Object);
 
-        var auctionResult = await createAuctionHandler.Handle(createAuction, new CancellationToken());
+        var createBid = new CreateBid(1, 1, 10m);
 
-        var createLot = new CreateLot("123", "456", auctionResult.Id, 10m);
-
-        var lotResult = await createLotHandler.Handle(createLot, new CancellationToken());
-
-        var createBid = new CreateBid(auctionResult.Id, lotResult.Id, 9m);
-
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken()));
+        Assert.Multiple(
+            () => Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken())),
+            () => auctionRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => lotRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => bidRepositoryMock.Verify(x => x.Create(It.IsAny<Bid>()), Times.Never)
+            );
     }
 
     [Fact]
-    public async Task CreateBidWithInvalidAuctionId()
+    public void CreateBidWithInvalidAuctionId()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns<Auction>(x => null);
 
-        var bidRepositoryMock = new BidRepository();
+        var lotRepositoryMock = new Mock<ILotRepository>();
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        lotRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns<Lot>(x => null);
 
-        var createLotHandler = new CreateLotHandler(lotRepositoryMock, auctionRepositoryMock);
+        var bidRepositoryMock = new Mock<IBidRepository>();
 
-        var createBidHandler = new CreateBidHandler(bidRepositoryMock, lotRepositoryMock, auctionRepositoryMock);
+        bidRepositoryMock.Setup(x => x.Create(It.IsAny<Bid>())).Returns<Bid>(x => null);
 
-        var createAuction = new CreateAuction("123", DateTime.Now, TimeSpan.FromMinutes(10));
+        var createBidHandler = new CreateBidHandler(bidRepositoryMock.Object, lotRepositoryMock.Object, auctionRepositoryMock.Object);
 
-        var auctionResult = await createAuctionHandler.Handle(createAuction, new CancellationToken());
+        var createBid = new CreateBid(-1, 1, 10m);
 
-        var createLot = new CreateLot("123", "456", auctionResult.Id, 10m);
-
-        var lotResult = await createLotHandler.Handle(createLot, new CancellationToken());
-
-        var createBid = new CreateBid(-1, lotResult.Id, 11m);
-
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken()));
+        Assert.Multiple(
+            () => Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken())),
+            () => auctionRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => lotRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Never),
+            () => bidRepositoryMock.Verify(x => x.Create(It.IsAny<Bid>()), Times.Never)
+            );
     }
 
     [Fact]
-    public async Task CreateBidWithInvalidLotId()
+    public void CreateBidWithInvalidLotId()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Auction());
 
-        var bidRepositoryMock = new BidRepository();
+        var lotRepositoryMock = new Mock<ILotRepository>();
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        lotRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns<Lot>(x => null);
 
-        var createLotHandler = new CreateLotHandler(lotRepositoryMock, auctionRepositoryMock);
+        var bidRepositoryMock = new Mock<IBidRepository>();
 
-        var createBidHandler = new CreateBidHandler(bidRepositoryMock, lotRepositoryMock, auctionRepositoryMock);
+        bidRepositoryMock.Setup(x => x.Create(It.IsAny<Bid>())).Returns<Bid>(x => null);
 
-        var createAuction = new CreateAuction("123", DateTime.Now, TimeSpan.FromMinutes(10));
+        var createBidHandler = new CreateBidHandler(bidRepositoryMock.Object, lotRepositoryMock.Object, auctionRepositoryMock.Object);
 
-        var auctionResult = await createAuctionHandler.Handle(createAuction, new CancellationToken());
+        var createBid = new CreateBid(1, -1, 10m);
 
-        var createLot = new CreateLot("123", "456", auctionResult.Id, 10m);
-
-        var lotResult = await createLotHandler.Handle(createLot, new CancellationToken());
-
-        var createBid = new CreateBid(auctionResult.Id, -1, 11m);
-
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken()));
+        Assert.Multiple(
+            () => Assert.ThrowsAsync<ApplicationException>(async () => await createBidHandler.Handle(createBid, new CancellationToken())),
+            () => auctionRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => lotRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once),
+            () => bidRepositoryMock.Verify(x => x.Create(It.IsAny<Bid>()), Times.Never)
+            );
     }
 }

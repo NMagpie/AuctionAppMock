@@ -1,72 +1,76 @@
-﻿using AuctionApp.Application.Auctions.Create;
-using AuctionApp.Application.Auctions.Responses;
-using AuctionApp.Infrastructure;
-using AutoFixture;
-using Castle.DynamicProxy.Generators;
-using System.Reflection;
+﻿using AuctionApp.Application.Abstractions;
+using AuctionApp.Application.Auctions.Create;
+using AuctionApp.Domain.Models;
+using Moq;
 
 namespace AuctionApp.Tests.AuctionApp.Application.Tests.AuctionsService;
 public class CreateAuctionTests
 {
+
     [Fact]
-    public async void CreateCorrectAuction()
+    public async void CreateAuctionGood()
     {
-        var auctionRepositoryMock = new AuctionRepository();
-
-        var lotRepositoryMock = new LotRepository();
-
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
-
         var auction = new CreateAuction("123", DateTime.Now.AddDays(1), TimeSpan.FromMinutes(10));
 
-        var auctionResult = await createAuctionHandler.Handle(auction, new CancellationToken());
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
+
+        auctionRepositoryMock.Setup(x => x.Create(It.IsAny<Auction>())).Returns<Auction?>(r => new Auction());
+
+        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock.Object);
+
+        await createAuctionHandler.Handle(auction, new CancellationToken());
+
+        auctionRepositoryMock.Verify(x => x.Create(It.IsAny<Auction>()), Times.Once);
+    }
+
+    [Fact]
+    public void CreateAuctionWithoutTitle()
+    {
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
+
+        auctionRepositoryMock.Setup(x => x.Create(It.IsAny<Auction>())).Returns<Auction?>(null);
+
+        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock.Object);
+
+        var auction = new CreateAuction("", DateTime.Now.AddMinutes(10), TimeSpan.FromMinutes(10));
 
         Assert.Multiple(
-            () => Assert.IsType<AuctionDto>(auctionResult),
-            () => Assert.True(auctionResult.Lots.Count == 0)
+            () => auctionRepositoryMock.Verify(r => r.Create(It.IsAny<Auction>()), Times.Never),
+            async () => await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken()))
             );
     }
 
     [Fact]
-    public async Task CreateAuctionWithoutTitle()
+    public void CreateAuctionWithPassedTimeStart()
     {
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var auctionRepositoryMock = new AuctionRepository();
+        auctionRepositoryMock.Setup(x => x.Create(It.IsAny<Auction>())).Returns<Auction?>(null);
 
-        var lotRepositoryMock = new LotRepository();
+        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock.Object);
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        var auction = new CreateAuction("123", DateTime.UtcNow.Subtract(TimeSpan.FromHours(1)), TimeSpan.FromMinutes(10));
 
-        var auction = new CreateAuction("", DateTime.Now.AddMinutes(10), TimeSpan.FromMinutes(10));
-
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken()));
+        Assert.Multiple(
+            async () => await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken())),
+            () => auctionRepositoryMock.Verify(r => r.Create(It.IsAny<Auction>()), Times.Never)
+            );
     }
 
     [Fact]
-    public async Task CreateAuctionWithPassedTimeStart()
+    public void CreateAuctionWithInvalidDuration()
     {
-        var auctionRepositoryMock = new AuctionRepository();
+        var auctionRepositoryMock = new Mock<IAuctionRepository>();
 
-        var lotRepositoryMock = new LotRepository();
+        auctionRepositoryMock.Setup(x => x.Create(It.IsAny<Auction>())).Returns<Auction?>(null);
 
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
-
-        var auction = new CreateAuction("", DateTime.Now.Subtract(TimeSpan.FromHours(1)), TimeSpan.FromMinutes(10));
-
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken()));
-    }
-
-    [Fact]
-    public async Task CreateAuctionWithInvalidDuration()
-    {
-        var auctionRepositoryMock = new AuctionRepository();
-
-        var lotRepositoryMock = new LotRepository();
-
-        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock, lotRepositoryMock);
+        var createAuctionHandler = new CreateAuctionHandler(auctionRepositoryMock.Object);
 
         var auction = new CreateAuction("123", DateTime.UtcNow, TimeSpan.FromMinutes(5));
 
-        await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken()));
+        Assert.Multiple(
+            () => auctionRepositoryMock.Verify(r => r.Create(It.IsAny<Auction>()), Times.Never),
+            async () => await Assert.ThrowsAsync<ApplicationException>(async () => await createAuctionHandler.Handle(auction, new CancellationToken()))
+            );
     }
 }

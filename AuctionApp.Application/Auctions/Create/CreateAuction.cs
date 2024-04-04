@@ -11,7 +11,7 @@ public class CreateAuctionHandler : IRequestHandler<CreateAuction, AuctionDto>
 {
     private readonly IAuctionRepository _auctionRepository;
 
-    public CreateAuctionHandler(IAuctionRepository auctionRepository, ILotRepository lotRepository)
+    public CreateAuctionHandler(IAuctionRepository auctionRepository)
     {
         _auctionRepository = auctionRepository;
     }
